@@ -178,41 +178,86 @@ def delete_user(id):
 def test_route():
     return "Route hoạt động!"
 
+
+
+# @app.route('/export_excel')
+# @login_required
+# def export_excel():
+#     violations = Violation.query.all()
+#     data = [{
+#         'Họ tên': v.name,
+#         'Ngày tháng năm sinh': v.birth_date,
+#         'Địa chỉ': v.address,
+#         'Biển số xe': v.license_plate,
+#         'Lỗi vi phạm': v.violation,
+#         'Ngày giờ vi phạm': v.violation_date
+#     } for v in violations]
+
+#     file_path = os.path.join(os.path.expanduser("~"), "Downloads", "violations.xlsx")
+#     workbook = openpyxl.Workbook()
+#     sheet = workbook.active
+
+#     # Write headers
+#     headers = ['Họ tên', 'Ngày tháng năm sinh', 'Địa chỉ', 'Biển số xe', 'Lỗi vi phạm', 'Ngày giờ vi phạm']
+#     sheet.append(headers)
+
+#     # Write data
+#     for row_data in data:
+#         sheet.append([
+#             row_data['Họ tên'],
+#             row_data['Ngày tháng năm sinh'].strftime('%Y-%m-%d'),
+#             row_data['Địa chỉ'],
+#             row_data['Biển số xe'],
+#             row_data['Lỗi vi phạm'],
+#             row_data['Ngày giờ vi phạm'].strftime('%Y-%m-%d %H:%M:%S')
+#         ])
+
+#     workbook.save(file_path)
+
+#     return send_file(file_path, as_attachment=True)
+
+import tempfile
+
 @app.route('/export_excel')
 @login_required
 def export_excel():
-    violations = Violation.query.all()
-    data = [{
-        'Họ tên': v.name,
-        'Ngày tháng năm sinh': v.birth_date,
-        'Địa chỉ': v.address,
-        'Biển số xe': v.license_plate,
-        'Lỗi vi phạm': v.violation,
-        'Ngày giờ vi phạm': v.violation_date
-    } for v in violations]
+    try:
+        violations = Violation.query.all()
+        data = [{
+            'Họ tên': v.name,
+            'Ngày tháng năm sinh': v.birth_date,
+            'Địa chỉ': v.address,
+            'Biển số xe': v.license_plate,
+            'Lỗi vi phạm': v.violation,
+            'Ngày giờ vi phạm': v.violation_date
+        } for v in violations]
 
-    file_path = os.path.join(os.path.expanduser("~"), "Downloads", "violations.xlsx")
-    workbook = openpyxl.Workbook()
-    sheet = workbook.active
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
+            file_path = tmp.name
+            workbook = openpyxl.Workbook()
+            sheet = workbook.active
 
-    # Write headers
-    headers = ['Họ tên', 'Ngày tháng năm sinh', 'Địa chỉ', 'Biển số xe', 'Lỗi vi phạm', 'Ngày giờ vi phạm']
-    sheet.append(headers)
+            # Write headers
+            headers = ['Họ tên', 'Ngày tháng năm sinh', 'Địa chỉ', 'Biển số xe', 'Lỗi vi phạm', 'Ngày giờ vi phạm']
+            sheet.append(headers)
 
-    # Write data
-    for row_data in data:
-        sheet.append([
-            row_data['Họ tên'],
-            row_data['Ngày tháng năm sinh'].strftime('%Y-%m-%d'),
-            row_data['Địa chỉ'],
-            row_data['Biển số xe'],
-            row_data['Lỗi vi phạm'],
-            row_data['Ngày giờ vi phạm'].strftime('%Y-%m-%d %H:%M:%S')
-        ])
+            # Write data
+            for row_data in data:
+                sheet.append([
+                    row_data['Họ tên'],
+                    row_data['Ngày tháng năm sinh'].strftime('%Y-%m-%d'),
+                    row_data['Địa chỉ'],
+                    row_data['Biển số xe'],
+                    row_data['Lỗi vi phạm'],
+                    row_data['Ngày giờ vi phạm'].strftime('%Y-%m-%d %H:%M:%S')
+                ])
 
-    workbook.save(file_path)
+            workbook.save(file_path)
 
-    return send_file(file_path, as_attachment=True)
+        return send_file(file_path, as_attachment=True)
+    except Exception as e:
+        return str(e), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
