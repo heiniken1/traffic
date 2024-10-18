@@ -217,6 +217,8 @@ def test_route():
 #     return send_file(file_path, as_attachment=True)
 
 import tempfile
+import openpyxl
+from flask import send_file
 
 @app.route('/export_excel')
 @login_required
@@ -257,6 +259,7 @@ def export_excel():
         return send_file(file_path, as_attachment=True)
     except Exception as e:
         return str(e), 500
+
 
 
 if __name__ == '__main__':
