@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit User</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-4">Edit User</h1>
+        <form action="/edit_user/{{ user.id }}" method="post">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password (leave blank to keep current password)</label>
+                <input type="password" class="form-control" id="password" name="password">
+            </div>
+            <button type="submit" class="btn btn-primary">Update User</button>
+        </form>
+    </div>
+</body>
+</html>

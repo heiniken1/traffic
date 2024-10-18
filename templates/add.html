@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Violation</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-4">Add Violation</h1>
+        <form action="/add" method="post">
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="name">Họ tên</label>
+                    <input type="text" class="form-control" id="name" name="name" placeholder="Họ tên" required>
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="birth_date">Ngày tháng năm sinh</label>
+                    <input type="date" class="form-control" id="birth_date" name="birth_date" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="address">Địa chỉ</label>
+                    <input type="text" class="form-control" id="address" name="address" placeholder="Địa chỉ" required>
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="license_plate">Biển số xe</label>
+                    <input type="text" class="form-control" id="license_plate" name="license_plate" placeholder="Biển số xe" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="violation">Lỗi vi phạm</label>
+                    <input type="text" class="form-control" id="violation" name="violation" placeholder="Lỗi vi phạm" required>
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="violation_date">Ngày giờ vi phạm</label>
+                    <input type="datetime-local" class="form-control" id="violation_date" name="violation_date" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Thêm vi phạm</button>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Traffic Violations</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">Traffic Violations</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <span class="nav-link">Xin chào, {{ current_user.username }}</span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/users">Manage Users</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">Sign Out</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <h1 class="mt-4">Traffic Violations</h1>
+        <a href="/add" class="btn btn-primary mb-4">Thêm vi phạm</a>
+        <a href="/export_excel" class="btn btn-success mb-4">Xuất ra Excel</a>
+        <form class="form-inline mb-4" method="GET" action="/">
+            <input class="form-control mr-sm-2" type="search" name="search" placeholder="Tìm kiếm" aria-label="Search">
+            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Tìm kiếm</button>
+        </form>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Họ tên</th>
+                    <th>Ngày tháng năm sinh</th>
+                    <th>Địa chỉ</th>
+                    <th>Biển số xe</th>
+                    <th>Lỗi vi phạm</th>
+                    <th>Ngày giờ vi phạm</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for violation in violations %}
+                    <tr>
+                        <td>{{ violation.name }}</td>
+                        <td>{{ violation.birth_date }}</td>
+                        <td>{{ violation.address }}</td>
+                        <td>{{ violation.license_plate }}</td>
+                        <td>{{ violation.violation }}</td>
+                        <td>{{ violation.violation_date }}</td>
+                        <td>
+                            <form action="/delete/{{ violation.id }}" method="post" style="display:inline;" onsubmit="return confirmDelete();">
+                                <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                            </form>
+                            <a href="/edit/{{ violation.id }}" class="btn btn-warning btn-sm" onclick="return confirmEdit();">Sửa</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <!-- Include jQuery and Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
