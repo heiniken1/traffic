@@ -1,15 +1,22 @@
-from flask import Flask, render_template, request, redirect, url_for, send_file
+from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user, UserMixin
+from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
+import tempfile
 import openpyxl
-from flask_mail import Mail, Message
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///violations.db'
 app.config['SECRET_KEY'] = 'your_secret_key'
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'your-email@gmail.com'
+app.config['MAIL_PASSWORD'] = 'your-email-password'
+mail = Mail(app)
 db = SQLAlchemy(app)
 
 login_manager = LoginManager()
@@ -62,6 +69,19 @@ def login():
             login_user(user)
             return redirect(url_for('index'))
     return render_template('login.html')
+
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        username = request.form['username']
+        user = User.query.filter_by(username=username).first()
+        if user:
+            msg = Message('Your Password', sender='your-email@gmail.com', recipients=['maiphuong7284@gmail.com'])
+            msg.body = f"Your password is: {user.password_hash}"
+            mail.send(msg)
+            return 'An email with your password has been sent.'
+        return 'User not found.'
+    return render_template('forgot_password.html')
 
 @app.route('/logout')
 @login_required
@@ -134,93 +154,6 @@ def delete_violation(id):
         db.session.commit()
     return redirect(url_for('index'))
 
-@app.route('/users')
-@login_required
-def manage_users():
-    users = User.query.all()
-    return render_template('manage_users.html', users=users)
-
-@app.route('/add_user', methods=['GET', 'POST'])
-@login_required
-def add_user():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        user = User(username=username)
-        user.set_password(password)
-        db.session.add(user)
-        db.session.commit()
-        return redirect(url_for('manage_users'))
-    return render_template('add_user.html')
-
-@app.route('/edit_user/<int:id>', methods=['GET', 'POST'])
-@login_required
-def edit_user(id):
-    user = User.query.get(id)
-    if request.method == 'POST':
-        user.username = request.form['username']
-        if request.form['password']:
-            user.set_password(request.form['password'])
-        db.session.commit()
-        return redirect(url_for('manage_users'))
-    return render_template('edit_user.html', user=user)
-
-@app.route('/delete_user/<int:id>', methods=['POST'])
-@login_required
-def delete_user(id):
-    user = User.query.get(id)
-    if user:
-        db.session.delete(user)
-        db.session.commit()
-    return redirect(url_for('manage_users'))
-
-@app.route('/test_route')
-@login_required
-def test_route():
-    return "Route hoạt động!"
-
-
-
-# @app.route('/export_excel')
-# @login_required
-# def export_excel():
-#     violations = Violation.query.all()
-#     data = [{
-#         'Họ tên': v.name,
-#         'Ngày tháng năm sinh': v.birth_date,
-#         'Địa chỉ': v.address,
-#         'Biển số xe': v.license_plate,
-#         'Lỗi vi phạm': v.violation,
-#         'Ngày giờ vi phạm': v.violation_date
-#     } for v in violations]
-
-#     file_path = os.path.join(os.path.expanduser("~"), "Downloads", "violations.xlsx")
-#     workbook = openpyxl.Workbook()
-#     sheet = workbook.active
-
-#     # Write headers
-#     headers = ['Họ tên', 'Ngày tháng năm sinh', 'Địa chỉ', 'Biển số xe', 'Lỗi vi phạm', 'Ngày giờ vi phạm']
-#     sheet.append(headers)
-
-#     # Write data
-#     for row_data in data:
-#         sheet.append([
-#             row_data['Họ tên'],
-#             row_data['Ngày tháng năm sinh'].strftime('%Y-%m-%d'),
-#             row_data['Địa chỉ'],
-#             row_data['Biển số xe'],
-#             row_data['Lỗi vi phạm'],
-#             row_data['Ngày giờ vi phạm'].strftime('%Y-%m-%d %H:%M:%S')
-#         ])
-
-#     workbook.save(file_path)
-
-#     return send_file(file_path, as_attachment=True)
-
-import tempfile
-import openpyxl
-from flask import send_file
-
 @app.route('/export_excel')
 @login_required
 def export_excel():
@@ -260,31 +193,6 @@ def export_excel():
         return send_file(file_path, as_attachment=True)
     except Exception as e:
         return str(e), 500
-
-
-
-
-# Cấu hình Flask-Mail
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'your-email@gmail.com'
-app.config['MAIL_PASSWORD'] = 'your-email-password'
-mail = Mail(app)
-
-@app.route('/forgot_password', methods=['GET', 'POST'])
-def forgot_password():
-    if request.method == 'POST':
-        username = request.form['username']
-        user = User.query.filter_by(username=username).first()
-        if user:
-            msg = Message('Your Password', sender='your-email@gmail.com', recipients=['maiphuong7284@gmail.com'])
-            msg.body = f"Your password is: {user.password_hash}"
-            mail.send(msg)
-            return 'An email with your password has been sent.'
-        return 'User not found.'
-    return render_template('forgot_password.html')
-
 
 if __name__ == '__main__':
     app.run(debug=True)
