@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
 import openpyxl
+from flask_mail import Mail, Message
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///violations.db'
@@ -260,6 +261,29 @@ def export_excel():
     except Exception as e:
         return str(e), 500
 
+
+
+
+# Cấu hình Flask-Mail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'your-email@gmail.com'
+app.config['MAIL_PASSWORD'] = 'your-email-password'
+mail = Mail(app)
+
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        username = request.form['username']
+        user = User.query.filter_by(username=username).first()
+        if user:
+            msg = Message('Your Password', sender='your-email@gmail.com', recipients=['maiphuong7284@gmail.com'])
+            msg.body = f"Your password is: {user.password_hash}"
+            mail.send(msg)
+            return 'An email with your password has been sent.'
+        return 'User not found.'
+    return render_template('forgot_password.html')
 
 
 if __name__ == '__main__':
