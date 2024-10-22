@@ -2,7 +2,13 @@
 <html>
 <head>
     <title>Add Violation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script>
+        function toUpperCase(element) {
+            element.value = element.value.toUpperCase();
+        }
+    </script>
 </head>
 <body>
     <div class="container">
@@ -11,7 +17,7 @@
             <div class="form-row">
                 <div class="form-group col-md-6">
                     <label for="name">Họ tên</label>
-                    <input type="text" class="form-control" id="name" name="name" placeholder="Họ tên" required>
+                    <input type="text" class="form-control" id="name" name="name" oninput="toUpperCase(this)" required>
                 </div>
                 <div class="form-group col-md-6">
                     <label for="birth_date">Ngày tháng năm sinh</label>
@@ -21,17 +27,17 @@
             <div class="form-row">
                 <div class="form-group col-md-6">
                     <label for="address">Địa chỉ</label>
-                    <input type="text" class="form-control" id="address" name="address" placeholder="Địa chỉ" required>
+                    <input type="text" class="form-control" id="address" name="address" required>
                 </div>
                 <div class="form-group col-md-6">
                     <label for="license_plate">Biển số xe</label>
-                    <input type="text" class="form-control" id="license_plate" name="license_plate" placeholder="Biển số xe" required>
+                    <input type="text" class="form-control" id="license_plate" name="license_plate" required>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group col-md-6">
                     <label for="violation">Lỗi vi phạm</label>
-                    <input type="text" class="form-control" id="violation" name="violation" placeholder="Lỗi vi phạm" required>
+                    <input type="text" class="form-control" id="violation" name="violation" oninput="toUpperCase(this)" required>
                 </div>
                 <div class="form-group col-md-6">
                     <label for="violation_date">Ngày giờ vi phạm</label>

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, send_file
+from flask import Flask, render_template, request, redirect, url_for, send_file, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user, UserMixin
 from flask_mail import Mail, Message
@@ -26,13 +26,13 @@ login_manager.login_view = 'login'
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
-    password_hash = db.Column(db.String(150), nullable=False)
+    password = db.Column(db.String(150), nullable=False)
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        self.password = password
 
     def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+        return self.password == password
 
 class Violation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -70,43 +70,18 @@ def login():
             return redirect(url_for('index'))
     return render_template('login.html')
 
-from itsdangerous import URLSafeTimedSerializer
-
-# Cấu hình URLSafeTimedSerializer
-s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
         username = request.form['username']
         user = User.query.filter_by(username=username).first()
         if user:
-            token = s.dumps(user.username, salt='password-reset-salt')
-            reset_url = url_for('reset_password', token=token, _external=True)
-            msg = Message('Password Reset Request', sender='your-email@gmail.com', recipients=['maiphuong7284@gmail.com'])
-            msg.body = f"To reset your password, click the following link: {reset_url}"
+            msg = Message('Your Password', sender='your-email@gmail.com', recipients=['maiphuong7284@gmail.com'])
+            msg.body = f"Your password is: {user.password}"
             mail.send(msg)
-            return 'An email with instructions to reset your password has been sent.'
+            return 'An email with your password has been sent.'
         return 'User not found.'
     return render_template('forgot_password.html')
-
-@app.route('/reset_password/<token>', methods=['GET', 'POST'])
-def reset_password(token):
-    try:
-        username = s.loads(token, salt='password-reset-salt', max_age=3600)
-    except:
-        return 'The reset link is invalid or has expired.'
-    
-    if request.method == 'POST':
-        new_password = request.form['password']
-        user = User.query.filter_by(username=username).first()
-        if user:
-            user.set_password(new_password)
-            db.session.commit()
-            return redirect(url_for('login'))
-    
-    return render_template('reset_password.html')
-
 
 @app.route('/logout')
 @login_required
@@ -135,40 +110,29 @@ def add_violation():
         birth_date = datetime.strptime(request.form['birth_date'], '%Y-%m-%d').date()
         address = request.form['address']
         license_plate = request.form['license_plate']
-        violation = request.form['violation']
+        violations = request.form.getlist('violation')
         violation_date = datetime.strptime(request.form['violation_date'], '%Y-%m-%dT%H:%M')
         
-        new_violation = Violation(
-            name=name,
-            birth_date=birth_date,
-            address=address,
-            license_plate=license_plate,
-            violation=violation,
-            violation_date=violation_date
-        )
-        db.session.add(new_violation)
-        db.session.commit()
+        print(f"Received data: {name}, {birth_date}, {address}, {license_plate}, {violations}, {violation_date}")
         
+        for violation in violations:
+            new_violation = Violation(
+                name=name,
+                birth_date=birth_date,
+                address=address,
+                license_plate=license_plate,
+                violation=violation,
+                violation_date=violation_date
+            )
+            db.session.add(new_violation)
+        
+        db.session.commit()
+        flash('Thêm vi phạm thành công!', 'success')
         return redirect(url_for('index'))
     
     return render_template('add.html')
 
-@app.route('/edit/<int:id>', methods=['GET', 'POST'])
-@login_required
-def edit_violation(id):
-    violation = Violation.query.get(id)
-    if request.method == 'POST':
-        violation.name = request.form['name']
-        violation.birth_date = datetime.strptime(request.form['birth_date'], '%Y-%m-%d').date()
-        violation.address = request.form['address']
-        violation.license_plate = request.form['license_plate']
-        violation.violation = request.form['violation']
-        violation.violation_date = datetime.strptime(request.form['violation_date'], '%Y-%m-%dT%H:%M')
-        
-        db.session.commit()
-        return redirect(url_for('index'))
-    
-    return render_template('edit.html', violation=violation)
+
 
 @app.route('/delete/<int:id>', methods=['POST'])
 @login_required
@@ -177,6 +141,7 @@ def delete_violation(id):
     if violation:
         db.session.delete(violation)
         db.session.commit()
+        flash('Xóa vi phạm thành công!', 'success')
     return redirect(url_for('index'))
 
 @app.route('/export_excel')
@@ -220,4 +185,13 @@ def export_excel():
         return str(e), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    with app.app_context():
+        db.create_all()
+        # Thêm người dùng mặc định nếu chưa tồn tại
+        if not User.query.filter_by(username='admin').first():
+            admin_user = User(username='admin')
+            admin_user.set_password('admin@123')
+            db.session.add(admin_user)
+            db.session.commit()
+            print("Người dùng 'admin' đã được thêm vào cơ sở dữ liệu với mật khẩu 'admin@123'.")
+    app.run(host='0.0.0.0', port=5000, debug=True)

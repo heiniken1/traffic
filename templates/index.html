@@ -4,6 +4,11 @@
     <title>Traffic Violations</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script>
+        function confirmDelete() {
+            return confirm('Bạn có chắc chắn muốn xóa vi phạm này không?');
+        }
+    </script>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -30,6 +35,13 @@
     </nav>
     <div class="container">
         <h1 class="mt-4">Traffic Violations</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="alert alert-success" role="alert">
+                    {{ messages[0][1] }}
+                </div>
+            {% endif %}
+        {% endwith %}
         <a href="/add" class="btn btn-primary mb-4">Thêm vi phạm</a>
         <a href="/export_excel" class="btn btn-success mb-4">Xuất ra Excel</a>
         <form class="form-inline mb-4" method="GET" action="/">
@@ -61,7 +73,7 @@
                             <form action="/delete/{{ violation.id }}" method="post" style="display:inline;" onsubmit="return confirmDelete();">
                                 <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
                             </form>
-                            <a href="/edit/{{ violation.id }}" class="btn btn-warning btn-sm" onclick="return confirmEdit();">Sửa</a>
+                            <a href="/edit/{{ violation.id }}" class="btn btn-warning btn-sm">Sửa</a>
                         </td>
                     </tr>
                 {% endfor %}
