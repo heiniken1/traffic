@@ -122,11 +122,12 @@ def add_violation():
             violation_date=violation_date
         )
         db.session.add(new_violation)
-        db.session.commit()
+        db.session.commit()  # Đảm bảo rằng bạn đã gọi commit
         
         return redirect(url_for('index'))
     
     return render_template('add.html')
+
 
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
