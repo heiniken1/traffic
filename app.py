@@ -14,8 +14,8 @@ app.config['SECRET_KEY'] = 'your_secret_key'
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'your-email@gmail.com'
-app.config['MAIL_PASSWORD'] = 'your-email-password'
+app.config['MAIL_USERNAME'] = 'trafficviolations248@gmail.com'
+app.config['MAIL_PASSWORD'] = 'pvaw anaq fkjy irpq'
 mail = Mail(app)
 db = SQLAlchemy(app)
 
@@ -70,18 +70,43 @@ def login():
             return redirect(url_for('index'))
     return render_template('login.html')
 
+from itsdangerous import URLSafeTimedSerializer
+
+# Cấu hình URLSafeTimedSerializer
+s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
         username = request.form['username']
         user = User.query.filter_by(username=username).first()
         if user:
-            msg = Message('Your Password', sender='your-email@gmail.com', recipients=['maiphuong7284@gmail.com'])
-            msg.body = f"Your password is: {user.password_hash}"
+            token = s.dumps(user.username, salt='password-reset-salt')
+            reset_url = url_for('reset_password', token=token, _external=True)
+            msg = Message('Password Reset Request', sender='your-email@gmail.com', recipients=['maiphuong7284@gmail.com'])
+            msg.body = f"To reset your password, click the following link: {reset_url}"
             mail.send(msg)
-            return 'An email with your password has been sent.'
+            return 'An email with instructions to reset your password has been sent.'
         return 'User not found.'
     return render_template('forgot_password.html')
+
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    try:
+        username = s.loads(token, salt='password-reset-salt', max_age=3600)
+    except:
+        return 'The reset link is invalid or has expired.'
+    
+    if request.method == 'POST':
+        new_password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+        if user:
+            user.set_password(new_password)
+            db.session.commit()
+            return redirect(url_for('login'))
+    
+    return render_template('reset_password.html')
+
 
 @app.route('/logout')
 @login_required
@@ -122,12 +147,11 @@ def add_violation():
             violation_date=violation_date
         )
         db.session.add(new_violation)
-        db.session.commit()  # Đảm bảo rằng bạn đã gọi commit
+        db.session.commit()
         
         return redirect(url_for('index'))
     
     return render_template('add.html')
-
 
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
