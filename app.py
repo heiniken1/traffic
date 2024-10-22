@@ -89,6 +89,13 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+@app.route('/users')
+@login_required
+def manage_users():
+    users = User.query.all()
+    return render_template('manage_users.html', users=users)
+
+
 @app.route('/')
 @login_required
 def index():
