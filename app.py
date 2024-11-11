@@ -95,15 +95,14 @@ def manage_users():
     users = User.query.all()
     return render_template('manage_users.html', users=users)
 
-
 @app.route('/')
 @login_required
 def index():
     search = request.args.get('search')
     if search:
         violations = Violation.query.filter(
-            Violation.name.contains(search) |
-            Violation.license_plate.contains(search)
+            Violation.name.ilike(f'%{search}%') |
+            Violation.license_plate.ilike(f'%{search}%')
         ).all()
     else:
         violations = Violation.query.all()
@@ -138,8 +137,6 @@ def add_violation():
         return redirect(url_for('index'))
     
     return render_template('add.html')
-
-
 
 @app.route('/delete/<int:id>', methods=['POST'])
 @login_required
@@ -190,20 +187,6 @@ def export_excel():
         return send_file(file_path, as_attachment=True)
     except Exception as e:
         return str(e), 500
-    
-@app.route('/')
-@login_required
-def index():
-    search = request.args.get('search')
-    if search:
-        violations = Violation.query.filter(
-            Violation.name.ilike(f'%{search}%') |
-            Violation.license_plate.ilike(f'%{search}%')
-        ).all()
-    else:
-        violations = Violation.query.all()
-    return render_template('index.html', violations=violations)
-
 
 if __name__ == '__main__':
     with app.app_context():
