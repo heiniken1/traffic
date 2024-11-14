@@ -7,6 +7,7 @@ from datetime import datetime
 import os
 import tempfile
 import openpyxl
+from unidecode import unidecode
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///violations.db'
@@ -100,9 +101,10 @@ def manage_users():
 def index():
     search = request.args.get('search')
     if search:
+        search = unidecode(search).lower()
         violations = Violation.query.filter(
-            Violation.name.ilike(f'%{search}%') |
-            Violation.license_plate.ilike(f'%{search}%')
+            db.func.lower(unidecode(Violation.name)).ilike(f'%{search}%') |
+            db.func.lower(unidecode(Violation.license_plate)).ilike(f'%{search}%')
         ).all()
     else:
         violations = Violation.query.all()
