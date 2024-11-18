@@ -2,12 +2,13 @@ from flask import Flask, render_template, request, redirect, url_for, send_file,
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user, UserMixin
 from flask_mail import Mail, Message
-from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
 import tempfile
 import openpyxl
 from unidecode import unidecode
+from flask_migrate import Migrate
+from flask_paginate import Pagination, get_page_parameter
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///violations.db'
@@ -19,6 +20,7 @@ app.config['MAIL_USERNAME'] = 'trafficviolations248@gmail.com'
 app.config['MAIL_PASSWORD'] = 'pvaw anaq fkjy irpq'
 mail = Mail(app)
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -43,6 +45,8 @@ class Violation(db.Model):
     license_plate = db.Column(db.String(20), nullable=False)
     violation = db.Column(db.String(200), nullable=False)
     violation_date = db.Column(db.DateTime, nullable=False)
+    added_by = db.Column(db.String(150), nullable=False)
+    is_deleted = db.Column(db.Boolean, default=False)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -94,21 +98,66 @@ def logout():
 @login_required
 def manage_users():
     users = User.query.all()
-    return render_template('manage_users.html', users=users)
+    return render_template('manage_users.html', users=users, current_user=current_user)
+
+@app.route('/add_user', methods=['GET', 'POST'])
+@login_required
+def add_user():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User(username=username)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        flash('User added successfully!', 'success')
+        return redirect(url_for('manage_users'))
+    return render_template('add_user.html')
+
+@app.route('/edit_user/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_user(id):
+    user = User.query.get(id)
+    if request.method == 'POST':
+        password = request.form['password']
+        user.set_password(password)
+        db.session.commit()
+        flash('Password updated successfully!', 'success')
+        return redirect(url_for('manage_users'))
+    return render_template('edit_user.html', user=user)
+
+@app.route('/delete_user/<int:id>', methods=['POST'])
+@login_required
+def delete_user(id):
+    user = User.query.get(id)
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+        flash('User deleted successfully!', 'success')
+    return redirect(url_for('manage_users'))
 
 @app.route('/')
 @login_required
 def index():
     search = request.args.get('search')
+    page = request.args.get(get_page_parameter(), type=int, default=1)
+    per_page = 50
+
     if search:
         search = unidecode(search).lower()
-        violations = Violation.query.filter(
-            db.func.lower(unidecode(Violation.name)).ilike(f'%{search}%') |
-            db.func.lower(unidecode(Violation.license_plate)).ilike(f'%{search}%')
-        ).all()
+        violations_query = Violation.query.filter_by(is_deleted=False).all()
+        violations = [v for v in violations_query if search in unidecode(v.name).lower() or search in unidecode(v.license_plate).lower()]
     else:
-        violations = Violation.query.all()
-    return render_template('index.html', violations=violations)
+        violations = Violation.query.filter_by(is_deleted=False).all()
+
+    total = len(violations)
+    start = (page - 1) * per_page
+    end = start + per_page
+    violations_paginated = violations[start:end]
+
+    pagination = Pagination(page=page, total=total, per_page=per_page, css_framework='bootstrap4')
+
+    return render_template('index.html', violations=violations_paginated, pagination=pagination, search=search)
 
 @app.route('/add', methods=['GET', 'POST'])
 @login_required
@@ -130,7 +179,8 @@ def add_violation():
                 address=address,
                 license_plate=license_plate,
                 violation=violation,
-                violation_date=violation_date
+                violation_date=violation_date,
+                added_by=current_user.username
             )
             db.session.add(new_violation)
         
@@ -145,7 +195,7 @@ def add_violation():
 def delete_violation(id):
     violation = Violation.query.get(id)
     if violation:
-        db.session.delete(violation)
+        violation.is_deleted = True
         db.session.commit()
         flash('Xóa vi phạm thành công!', 'success')
     return redirect(url_for('index'))
@@ -154,14 +204,15 @@ def delete_violation(id):
 @login_required
 def export_excel():
     try:
-        violations = Violation.query.all()
+        violations = Violation.query.filter_by(is_deleted=False).all()
         data = [{
             'Họ tên': v.name,
             'Ngày tháng năm sinh': v.birth_date,
             'Địa chỉ': v.address,
             'Biển số xe': v.license_plate,
             'Lỗi vi phạm': v.violation,
-            'Ngày giờ vi phạm': v.violation_date
+            'Ngày giờ vi phạm': v.violation_date,
+            'Người nhập': v.added_by
         } for v in violations]
 
         with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
@@ -170,7 +221,7 @@ def export_excel():
             sheet = workbook.active
 
             # Write headers
-            headers = ['Họ tên', 'Ngày tháng năm sinh', 'Địa chỉ', 'Biển số xe', 'Lỗi vi phạm', 'Ngày giờ vi phạm']
+            headers = ['Họ tên', 'Ngày tháng năm sinh', 'Địa chỉ', 'Biển số xe', 'Lỗi vi phạm', 'Ngày giờ vi phạm', 'Người nhập']
             sheet.append(headers)
 
             # Write data
@@ -181,7 +232,8 @@ def export_excel():
                     row_data['Địa chỉ'],
                     row_data['Biển số xe'],
                     row_data['Lỗi vi phạm'],
-                    row_data['Ngày giờ vi phạm'].strftime('%Y-%m-%d %H:%M:%S')
+                    row_data['Ngày giờ vi phạm'].strftime('%Y-%m-%d %H:%M:%S'),
+                    row_data['Người nhập']
                 ])
 
             workbook.save(file_path)

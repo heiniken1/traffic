@@ -27,9 +27,7 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/logout">Sign Out</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/register">Đăng ký</a>
-                </li>
+                
             </ul>
         </div>
     </nav>
@@ -57,6 +55,7 @@
                     <th>Biển số xe</th>
                     <th>Lỗi vi phạm</th>
                     <th>Ngày giờ vi phạm</th>
+                    <th>Người nhập</th>
                     <th>Hành động</th>
                 </tr>
             </thead>
@@ -69,6 +68,7 @@
                         <td>{{ violation.license_plate }}</td>
                         <td>{{ violation.violation }}</td>
                         <td>{{ violation.violation_date }}</td>
+                        <td>{{ violation.added_by }}</td>
                         <td>
                             <form action="/delete/{{ violation.id }}" method="post" style="display:inline;" onsubmit="return confirmDelete();">
                                 <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
@@ -79,7 +79,15 @@
                 {% endfor %}
             </tbody>
         </table>
+        <div class="pagination-wrapper">
+            {{ pagination.links }}
+        </div>
     </div>
+    <script>
+        function confirmDelete() {
+            return confirm('Bạn có chắc chắn muốn xóa vi phạm này?');
+        }
+    </script>
     <!-- Include jQuery and Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
