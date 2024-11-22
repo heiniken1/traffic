@@ -49,13 +49,13 @@
         <table class="table table-striped table-responsive">
             <thead>
                 <tr>
-                    <th>Họ tên</th>
-                    <th>Ngày tháng năm sinh</th>
-                    <th>Địa chỉ</th>
-                    <th>Biển số xe</th>
-                    <th>Lỗi vi phạm</th>
-                    <th>Ngày giờ vi phạm</th>
-                    <th>Người nhập</th>
+                    <th><a href="{{ url_for('index', sort_by='name', sort_order='asc' if sort_order == 'desc' else 'desc') }}">Họ tên</a></th>
+                    <th><a href="{{ url_for('index', sort_by='birth_date', sort_order='asc' if sort_order == 'desc' else 'desc') }}">Ngày tháng năm sinh</a></th>
+                    <th><a href="{{ url_for('index', sort_by='address', sort_order='asc' if sort_order == 'desc' else 'desc') }}">Địa chỉ</a></th>
+                    <th><a href="{{ url_for('index', sort_by='license_plate', sort_order='asc' if sort_order == 'desc' else 'desc') }}">Biển số xe</a></th>
+                    <th><a href="{{ url_for('index', sort_by='violation', sort_order='asc' if sort_order == 'desc' else 'desc') }}">Lỗi vi phạm</a></th>
+                    <th><a href="{{ url_for('index', sort_by='violation_date', sort_order='asc' if sort_order == 'desc' else 'desc') }}">Ngày giờ vi phạm</a></th>
+                    <th><a href="{{ url_for('index', sort_by='added_by', sort_order='asc' if sort_order == 'desc' else 'desc') }}">Người nhập</a></th>
                     <th>Hành động</th>
                 </tr>
             </thead>
