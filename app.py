@@ -142,13 +142,18 @@ def index():
     search = request.args.get('search')
     page = request.args.get(get_page_parameter(), type=int, default=1)
     per_page = 50
+    sort_by = request.args.get('sort_by', 'violation_date')
+    sort_order = request.args.get('sort_order', 'desc')
 
     if search:
         search = unidecode(search).lower()
         violations_query = Violation.query.filter_by(is_deleted=False).all()
         violations = [v for v in violations_query if search in unidecode(v.name).lower() or search in unidecode(v.license_plate).lower()]
     else:
-        violations = Violation.query.filter_by(is_deleted=False).all()
+        if sort_order == 'asc':
+            violations = Violation.query.filter_by(is_deleted=False).order_by(getattr(Violation, sort_by).asc()).all()
+        else:
+            violations = Violation.query.filter_by(is_deleted=False).order_by(getattr(Violation, sort_by).desc()).all()
 
     total = len(violations)
     start = (page - 1) * per_page
@@ -157,7 +162,7 @@ def index():
 
     pagination = Pagination(page=page, total=total, per_page=per_page, css_framework='bootstrap4')
 
-    return render_template('index.html', violations=violations_paginated, pagination=pagination, search=search)
+    return render_template('index.html', violations=violations_paginated, pagination=pagination, search=search, sort_by=sort_by, sort_order=sort_order)
 
 @app.route('/add', methods=['GET', 'POST'])
 @login_required
@@ -189,6 +194,22 @@ def add_violation():
         return redirect(url_for('index'))
     
     return render_template('add.html')
+
+@app.route('/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_violation(id):
+    violation = Violation.query.get_or_404(id)
+    if request.method == 'POST':
+        violation.name = request.form['name']
+        violation.birth_date = datetime.strptime(request.form['birth_date'], '%Y-%m-%d').date()
+        violation.address = request.form['address']
+        violation.license_plate = request.form['license_plate']
+        violation.violation = request.form['violation']
+        violation.violation_date = datetime.strptime(request.form['violation_date'], '%Y-%m-%dT%H:%M')
+        db.session.commit()
+        flash('Violation updated successfully!', 'success')
+        return redirect(url_for('index'))
+    return render_template('edit_violation.html', violation=violation)
 
 @app.route('/delete/<int:id>', methods=['POST'])
 @login_required
